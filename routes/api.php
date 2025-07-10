@@ -27,9 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rutas accesibles solo para administradores
     Route::middleware([CheckRole::class . ':admin'])->group(function () {
-        Route::apiResource('specialties', SpecialtyController::class);
-        Route::apiResource('doctors', DoctorController::class);
-        Route::apiResource('services', ServiceController::class);
+       
         
         // Rutas de reportes (solo admin)
         Route::get('/appointmentss/names', [ReportController::class, 'listAppointmentsWithNames']);
@@ -43,7 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/patientss/multiple-appointments-same-doctor', [ReportController::class, 'findPatientsWithMultipleAppointmentsWithSameDoctor']);
         Route::get('/appointmentss/future', [ReportController::class, 'listFutureAppointments']);
     });
-
+     Route::apiResource('specialties', SpecialtyController::class);
+        Route::apiResource('doctors', DoctorController::class);
+        Route::apiResource('services', ServiceController::class);
     // Rutas accesibles para todos los usuarios autenticados
     Route::apiResource('patients', PatientController::class);
     Route::apiResource('appointments', AppointmentController::class);
