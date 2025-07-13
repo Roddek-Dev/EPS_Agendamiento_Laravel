@@ -11,15 +11,17 @@ class DoctorController extends Controller
 {
     public function index()
     {
-        $doctors = Doctor::all();
+        // Obtener doctores con su especialidad cargada
+        $doctors = Doctor::with('specialty:id,name')->get();
         return response()->json($doctors);
     }
 
     public function store(Request $request)
     {
+        // ✅ CAMBIO: Validar 'specialty_id' en lugar de 'specialty'
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'specialty' => 'nullable|string|max:255',
+            'specialty_id' => 'required|exists:specialties,id', // Asegura que el ID de la especialidad exista
         ]);
 
         if ($validator->fails()) {
@@ -33,7 +35,8 @@ class DoctorController extends Controller
 
     public function show(string $id)
     {
-        $doctor = Doctor::find($id);
+        // Cargar el doctor con su especialidad
+        $doctor = Doctor::with('specialty:id,name')->find($id);
 
         if (!$doctor) {
             return response()->json(["message" => 'Doctor no encontrado'], 404);
@@ -50,9 +53,10 @@ class DoctorController extends Controller
             return response()->json(["message" => 'Doctor no encontrado'], 404);
         }
 
+        // ✅ CAMBIO: Validar 'specialty_id' en lugar de 'specialty'
         $validator = Validator::make($request->all(), [
-            'name' => 'string|max:255',
-            'specialty' => 'nullable|string|max:255',
+            'name' => 'sometimes|string|max:255', // 'sometimes' para que sea opcional en la actualización
+            'specialty_id' => 'sometimes|exists:specialties,id',
         ]);
 
         if ($validator->fails()) {

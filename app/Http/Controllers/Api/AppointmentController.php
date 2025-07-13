@@ -13,17 +13,19 @@ class AppointmentController extends Controller
 {
     public function index()
     {
-        $appointments = Appointment::with(['patient', 'doctor'])->get();
+        // Cargar citas con sus relaciones
+        $appointments = Appointment::with(['patient:id,name', 'doctor:id,name', 'service:id,name'])->get();
         return response()->json($appointments);
     }
 
     public function store(Request $request)
     {
+        // ✅ CAMBIO: Añadir 'service_id' a la validación
         $validator = Validator::make($request->all(), [
             'patient_id' => 'required|exists:patients,id',
             'doctor_id' => 'required|exists:doctors,id',
-            'appointment_time' => 'required|date',
-            'notes' => 'nullable|string',
+            'service_id' => 'nullable|exists:services,id', // Puede ser nulo, pero si existe, debe estar en la tabla services
+            'appointment_time' => 'required|date_format:Y-m-d H:i:s', // Formato específico
         ]);
 
         if ($validator->fails()) {
@@ -37,7 +39,8 @@ class AppointmentController extends Controller
 
     public function show(string $id)
     {
-        $appointment = Appointment::with(['patient', 'doctor'])->find($id);
+        // Cargar la cita con sus relaciones
+        $appointment = Appointment::with(['patient:id,name', 'doctor:id,name', 'service:id,name'])->find($id);
 
         if (!$appointment) {
             return response()->json(["message" => 'Cita no encontrada'], 404);
@@ -54,11 +57,12 @@ class AppointmentController extends Controller
             return response()->json(["message" => 'Cita no encontrada'], 404);
         }
 
+        // ✅ CAMBIO: Añadir 'service_id' a la validación de actualización
         $validator = Validator::make($request->all(), [
-            'patient_id' => 'exists:patients,id',
-            'doctor_id' => 'exists:doctors,id',
-            'appointment_time' => 'date',
-            'notes' => 'nullable|string',
+            'patient_id' => 'sometimes|exists:patients,id',
+            'doctor_id' => 'sometimes|exists:doctors,id',
+            'service_id' => 'nullable|exists:services,id',
+            'appointment_time' => 'sometimes|date_format:Y-m-d H:i:s',
         ]);
 
         if ($validator->fails()) {
@@ -80,7 +84,7 @@ class AppointmentController extends Controller
 
         $appointment->delete();
 
-        return response()->json(['message' => 'Cita eliminada con exito']);
+        return response()->json(['message' => 'Cita eliminada con éxito']);
     }
 
     public function listAppointmentsWithNames(): JsonResponse
@@ -149,7 +153,7 @@ class AppointmentController extends Controller
             SELECT
                 d.id AS doctor_id,
                 d.name AS nombre_doctor,
-                d.specialty AS especialidad,
+                d.specialty AS especialidad,    
                 COUNT(a.id) AS total_citas
             FROM
                 doctors d

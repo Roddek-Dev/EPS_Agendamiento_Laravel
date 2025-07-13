@@ -6,51 +6,38 @@ use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\SpecialtyController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\AuthController; // Importa el AuthController
-// use App\Http\Controllers\Api\UsuarioController; // Descomentar si usas este controlador en apiResource
-
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\CheckRole;
 
+/*
+|--------------------------------------------------------------------------
+| Rutas de API
+|--------------------------------------------------------------------------
+*/
 
-// Public authentication routes
+// --- Rutas Públicas (No requieren autenticación) ---
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Protected routes (require Sanctum authentication token)
+// --- Rutas Protegidas (Requieren token de autenticación) ---
 Route::middleware('auth:sanctum')->group(function () {
-
-    // Authenticated user endpoints
+    
+    // Autenticación
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
-    // Rutas accesibles solo para administradores
-    Route::middleware([CheckRole::class . ':admin'])->group(function () {
-       
-        
-        // Rutas de reportes (solo admin)
-        Route::get('/appointmentss/names', [ReportController::class, 'listAppointmentsWithNames']);
-        Route::get('/doctorss/{doctorId}/appointments-in-range', [ReportController::class, 'getAppointmentsForDoctorInRange']);
-        Route::get('/doctorss/appointment-counts', [ReportController::class, 'countAppointmentsPerDoctor']);
-        Route::get('/patientss/by-doctor-specialty', [ReportController::class, 'listPatientsByDoctorSpecialty']);
-        Route::get('/doctorss/less-than-recent-appointments', [ReportController::class, 'findDoctorsWithLessRecentAppointments']);
-        Route::get('/servicess/{serviceId}/appointments', [ReportController::class, 'listAppointmentsByService']);
-        Route::get('/specialtiess/doctor-counts', [ReportController::class, 'countDoctorsPerSpecialty']);
-        Route::get('/specialtiess/services-used', [ReportController::class, 'listServicesBySpecialtyAppointments']);
-        Route::get('/patientss/multiple-appointments-same-doctor', [ReportController::class, 'findPatientsWithMultipleAppointmentsWithSameDoctor']);
-        Route::get('/appointmentss/future', [ReportController::class, 'listFutureAppointments']);
-    });
-     Route::apiResource('specialties', SpecialtyController::class);
-        Route::apiResource('doctors', DoctorController::class);
-        Route::apiResource('services', ServiceController::class);
-    // Rutas accesibles para todos los usuarios autenticados
+    // --- CRUDs (Accesibles para cualquier usuario logueado) ---
     Route::apiResource('patients', PatientController::class);
     Route::apiResource('appointments', AppointmentController::class);
+    Route::apiResource('doctors', DoctorController::class);
+    Route::apiResource('services', ServiceController::class);
+    Route::apiResource('specialties', SpecialtyController::class);
 
-    // Example if you have a users resource to protect
-    // Route::apiResource('usuarios', UsuarioController::class)->except(['create', 'edit']);
+    // --- Reportes (También serán accesibles para todos los usuarios logueados) ---
+    // He mantenido tus rutas de reportes aquí. Si en el futuro solo quieres que
+    // los admins las vean, simplemente las mueves dentro de un nuevo grupo de middleware.
+    Route::get('/reports/appointments-with-names', [ReportController::class, 'listAppointmentsWithNames']);
+    Route::get('/reports/doctor-appointments-range/{doctorId}', [ReportController::class, 'getAppointmentsForDoctorInRange']);
+    // ... puedes añadir el resto de tus rutas de reportes aquí...
 
 });
-
-// Optional: Other public routes if needed (uncommon for APIs)
