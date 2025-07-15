@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule; // ✅ AÑADIDO: Importar Rule para validación
 
 class AuthController extends Controller
 {
@@ -20,28 +21,30 @@ class AuthController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
+        // ✅ CAMBIO: Añadir validación para el campo 'role'
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed', // Ajustado a min:6 para coincidir con el frontend
+            'password' => 'required|string|min:6|confirmed',
+            'role' => ['required', Rule::in(['admin', 'user'])], // Valida que el rol sea 'admin' o 'user'
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
+        // ✅ CAMBIO: Asignar el rol desde la solicitud
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user',
+            'role' => $request->role, // Se toma el rol de la petición
         ]);
 
-        // *** CAMBIO CLAVE: Generar token y devolver la respuesta esperada ***
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'token' => $token, // Renombrado de 'access_token' para coincidir con el frontend
+            'token' => $token,
             'user' => $user
         ], 201);
     }
@@ -67,9 +70,8 @@ class AuthController extends Controller
             $user = Auth::user();
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // *** CAMBIO CLAVE: Asegurar consistencia en la respuesta ***
             return response()->json([
-                'token' => $token, // Renombrado de 'access_token' para ser consistente
+                'token' => $token,
                 'user' => $user
             ]);
         } else {
