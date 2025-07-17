@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Autenticación
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 
     // --- CRUDs (Accesibles para cualquier usuario logueado) ---
     Route::apiResource('patients', PatientController::class);
